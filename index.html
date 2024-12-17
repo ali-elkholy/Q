@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List with Reminder & Notification</title>
+    <title>Task Reminder</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,7 +15,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f4f7fb;
+            background-color: white;
             color: #333;
         }
         .container {
@@ -52,8 +52,8 @@
     <!-- App Container -->
     <div class="container">
         <div class="text-center mb-4">
-            <h1 class="fw-bold text-primary">To-Do List with Reminder & Notification</h1>
-            <p class="text-muted">Set reminders with desktop notifications!</p>
+            <h1 class="fw-bold text-danger">Task Reminder</h1>
+            <p class="text-muted">Coded By &copy; Ali Elkholy</p>
         </div>
 
         <!-- Reminder Input Form -->
@@ -68,14 +68,13 @@
                     <input type="datetime-local" id="reminderTime" class="form-control">
                 </div>
                 <div class="col-12">
-                    <button id="addReminder" class="btn btn-primary w-100">Add Reminder</button>
+                    <button id="addReminder" class="btn btn-dark w-100">Add Reminder</button>
                 </div>
             </div>
         </div>
 
         <!-- Reminder List -->
         <div id="reminderList" class="mt-4">
-            <h3 class="text-center text-secondary">Upcoming Reminders</h3>
             <ul class="list-group" id="reminders">
                 <!-- Dynamic Reminder Items Here -->
             </ul>
@@ -117,7 +116,7 @@
             const time = document.getElementById("reminderTime").value;
 
             if (title === "" || time === "") {
-                alert("Please fill in both fields!");
+                alert("Please fill out all fields!");
                 return;
             }
 
@@ -135,10 +134,14 @@
             document.getElementById("reminderTime").value = "";
         });
 
-        // Function to mark reminder as completed
+        // Function to mark reminder as completed and remove it from localStorage
         function completeReminder(index) {
-            reminders[index].completed = true;
+            reminders.splice(index, 1);  // Remove the completed reminder from the array
+
+            // Save the updated reminders list back to localStorage
             localStorage.setItem('reminders', JSON.stringify(reminders));
+
+            // Refresh the reminder list to display the updated data
             displayReminders();
         }
 
@@ -155,8 +158,8 @@
         function showNotification(title) {
             if (Notification.permission === "granted") {
                 const notification = new Notification("Reminder", {
-                    body: `Time for: ${title}`,
-                    icon: "https://cdn-icons-png.flaticon.com/512/2769/2769333.png"
+                    body: `Time is now: ${title}`,
+                    icon: "https://as1.ftcdn.net/v2/jpg/01/73/89/38/1000_F_173893847_9Jdw5yi2lXkqLigR6eMMcxe0w3in05p0.jpg"
                 });
 
                 // Stop sound when notification is clicked
@@ -168,7 +171,7 @@
                 Notification.requestPermission().then(permission => {
                     if (permission === "granted") {
                         const notification = new Notification("Reminder", {
-                            body: `Time for: ${title}`,
+                            body: `Time is now: ${title}`,
                             icon: "https://cdn-icons-png.flaticon.com/512/2769/2769333.png"
                         });
 
