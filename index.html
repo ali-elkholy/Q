@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List with Reminder & Notification</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fb;
+            color: #333;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        #reminderList {
+            margin-top: 20px;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .btn-complete {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-complete:disabled {
+            background-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- App Container -->
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="fw-bold text-primary">To-Do List with Reminder & Notification</h1>
+            <p class="text-muted">Set reminders with desktop notifications!</p>
+        </div>
+
+        <!-- Reminder Input Form -->
+        <div class="card p-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="reminderTitle" class="form-label">Reminder Title</label>
+                    <input type="text" id="reminderTitle" class="form-control" placeholder="Enter reminder title">
+                </div>
+                <div class="col-md-6">
+                    <label for="reminderTime" class="form-label">Reminder Time</label>
+                    <input type="datetime-local" id="reminderTime" class="form-control">
+                </div>
+                <div class="col-12">
+                    <button id="addReminder" class="btn btn-primary w-100">Add Reminder</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminder List -->
+        <div id="reminderList" class="mt-4">
+            <h3 class="text-center text-secondary">Upcoming Reminders</h3>
+            <ul class="list-group" id="reminders">
+                <!-- Dynamic Reminder Items Here -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Sound File -->
+    <audio id="alarmSound" src="https://assets.mixkit.co/active_storage/sfx/2506/2506-preview.mp3" preload="auto"></audio>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Main JavaScript -->
+    <script>
+        const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+        const reminderList = document.getElementById("reminders");
+        const addReminderButton = document.getElementById("addReminder");
+        const alarmSound = document.getElementById("alarmSound");
+
+        // Function to display reminders in the list
+        function displayReminders() {
+            reminderList.innerHTML = "";
+            reminders.forEach((reminder, index) => {
+                const li = document.createElement("li");
+                li.className = `list-group-item d-flex justify-content-between align-items-center ${reminder.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <span><strong>${reminder.title}</strong> - ${new Date(reminder.time).toLocaleString()}</span>
+                    <button class="btn btn-${reminder.completed ? 'secondary' : 'success'} btn-sm" onclick="completeReminder(${index})">
+                        ${reminder.completed ? 'Completed' : 'Complete'}
+                    </button>
+                `;
+                reminderList.appendChild(li);
+            });
+        }
+
+        // Function to add reminder
+        addReminderButton.addEventListener("click", () => {
+            const title = document.getElementById("reminderTitle").value.trim();
+            const time = document.getElementById("reminderTime").value;
+
+            if (title === "" || time === "") {
+                alert("Please fill in both fields!");
+                return;
+            }
+
+            const reminderTime = new Date(time);
+            if (reminderTime < new Date()) {
+                alert("Reminder time must be in the future!");
+                return;
+            }
+
+            reminders.push({ title, time: reminderTime, completed: false });
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            displayReminders();
+            scheduleNotification(title, reminderTime);
+            document.getElementById("reminderTitle").value = "";
+            document.getElementById("reminderTime").value = "";
+        });
+
+        // Function to mark reminder as completed
+        function completeReminder(index) {
+            reminders[index].completed = true;
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            displayReminders();
+        }
+
+        // Function to schedule browser notifications
+        function scheduleNotification(title, time) {
+            const delay = time - new Date();
+            setTimeout(() => {
+                showNotification(title);
+                playSound();
+            }, delay);
+        }
+
+        // Show a browser notification
+        function showNotification(title) {
+            if (Notification.permission === "granted") {
+                const notification = new Notification("Reminder", {
+                    body: `Time for: ${title}`,
+                    icon: "https://cdn-icons-png.flaticon.com/512/2769/2769333.png"
+                });
+
+                // Stop sound when notification is clicked
+                notification.onclick = function() {
+                    alarmSound.pause();
+                    alarmSound.currentTime = 0; // Reset sound
+                };
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        const notification = new Notification("Reminder", {
+                            body: `Time for: ${title}`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/2769/2769333.png"
+                        });
+
+                        // Stop sound when notification is clicked
+                        notification.onclick = function() {
+                            alarmSound.pause();
+                            alarmSound.currentTime = 0; // Reset sound
+                        };
+                    }
+                });
+            }
+        }
+
+        // Play alarm sound
+        function playSound() {
+            alarmSound.currentTime = 0; // Reset to start
+            alarmSound.play();
+        }
+
+        // Request Notification Permission on Page Load
+        document.addEventListener("DOMContentLoaded", () => {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+            displayReminders();
+        });
+    </script>
+</body>
+</html>
